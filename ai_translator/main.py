@@ -9,15 +9,42 @@ from translator import PDFTranslator
 
 if __name__ == "__main__":
     argument_parser = ArgumentParser()
-    args = argument_parser.parse_arguments()
+    args = argument_parser.parse_args()
     config_loader = ConfigLoader(args.config)
-
     config = config_loader.load_config()
+    LOG.info(config)
 
-    model_name = args.openai_model if args.openai_model else config['OpenAIModel']['model']
-    api_key = args.openai_api_key if args.openai_api_key else config['OpenAIModel']['api_key']
-    model = OpenAIModel(model=model_name, api_key=api_key)
+    # 检查赋值参数
+    if config:
+        model_name = args.openai_model if args.openai_model else config['OpenAIModel']['model']
+        args.openai_model = model_name
+        api_key = args.openai_api_key if args.openai_api_key else config['OpenAIModel']['api_key']
+        args.openai_api_key = api_key
+        glm_url = args.glm_model_url if args.glm_model_url else config['GLMModel']['model_url']
+        args.glm_model_url = glm_url
+        timeout = args.timeout if args.timeout else config['GLMModel']['timeout']
+        args.timeout = timeout
+        LOG.info(f'model_name:{model_name}, api_key:{api_key}, glm_url:{glm_url}, timeout:{timeout}')
+    # args = argument_parser.parse_arguments()
+    LOG.info(args)
+    model_type = args.model_type
+    if not model_type:
+        args.model_type = 'OpenAIModel'
+        model_type = args.model_type
 
+
+
+    model = None
+    if model_type == 'OpenAIModel':
+        print("使用openai接口")
+        model_name = args.openai_model if args.openai_model else config['OpenAIModel']['model']
+        api_key = args.openai_api_key if args.openai_api_key else config['OpenAIModel']['api_key']
+        model = OpenAIModel(model=model_name, api_key=api_key)
+    elif model_type == 'GLMModel':
+        print("使用glm接口")
+        glm_url = args.glm_model_url if args.glm_model_url else config['GLMModel']['model_url']
+        timeout = args.timeout if args.timeout else config['GLMModel']['timeout']
+        model = GLMModel(model_url=glm_url, timeout=timeout)
 
     pdf_file_path = args.book if args.book else config['common']['book']
     file_format = args.file_format if args.file_format else config['common']['file_format']
